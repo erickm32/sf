@@ -63,8 +63,9 @@ cbigStep (Skip,s)          = (Skip,s)
 cbigStep (If b c1 c2,s) = case bbigStep(b,s) of
                 (True, _) -> (c1, s)
                 (False, _) -> (c2, s)
---cbigStep (Seq c1 c2,s)  =
---cbigStep (Atrib (Var x) e,s) =
+
+--cbigStep (Seq c1 c2,s) =
+cbigStep (Atrib (Var x) e,s) = let (n1, s1) = abigStep(e, s) in (Skip, mudaVar s "x" n1)
 --cbigStep (While b c, s) =
 
 
