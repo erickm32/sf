@@ -60,7 +60,9 @@ bbigStep (Or b1 b2,s ) = let(n1,s1) = bbigStep (b1, s)
 
 cbigStep :: (CExp,Estado) -> (CExp,Estado)
 cbigStep (Skip,s)          = (Skip,s)
--- cbigStep (If b c1 c2,s)
+cbigStep (If b c1 c2,s) = case bbigStep(b,s) of
+                (True, _) -> (c1, s)
+                (False, _) -> (c2, s)
 --cbigStep (Seq c1 c2,s)  =
 --cbigStep (Atrib (Var x) e,s) =
 --cbigStep (While b c, s) =
@@ -75,8 +77,8 @@ exemplo = Som (Num 3) (Som (Var "x") (Var "y"))
 
 teste1 :: BExp
 teste1 = (Ig (Som (Num 3) (Num 3))  (Mul (Num 2) (Num 3)))
---teste2 :: BExp
---teste2 = (Ig (Som (Var "x") (Num 3))  (Mul (Num 2) (Num 3)))
+teste2 :: BExp
+teste2 = (Ig (Som (Var "x") (Num 3))  (Mul (Num 2) (Num 3)))
 
 
 --testec1 :: CExp
