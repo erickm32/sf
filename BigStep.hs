@@ -20,6 +20,10 @@ data CExp = While BExp CExp
   | If BExp CExp CExp
   | Seq CExp CExp
   | Atrib AExp AExp
+  -- | Repeat CExp Until BExp
+  -- | Do CExp While BExp
+  -- | For normal (?)
+  | Swap AExp AExp  -- troca valor dos 2
   | Skip
   deriving(Show)
 
@@ -71,11 +75,20 @@ cbigStep (Atrib (Var x) e,s) = let (n1, s1) = abigStep(e, s) in (Skip, mudaVar s
 cbigStep (While b c, s) = case bbigStep(b, s) of
                 (True, _) -> let (loop, s') = (While b c, s) in (Seq c loop, s')
                 (False, s') -> (Skip, s')
+--swap(x,y)
+cbigStep (Swap (Var x) (Var y), s) = (Skip, mudaVar (mudaVar s x (procuraVar s y)) y (procuraVar s x))
+
+--repart a until b
+--do a while b
+--for normal (?)
+
 
 
 meuEstado :: Estado
 meuEstado = [("x",3), ("y",0), ("z",0)]
 
+estadoTestaSwap :: Estado
+estadoTestaSwap = [("x",3), ("y",2), ("z",0)]
 
 exemplo :: AExp
 exemplo = Som (Num 3) (Som (Var "x") (Var "y"))
@@ -95,3 +108,6 @@ fatorial = (Seq (Atrib (Var "y") (Num 1))
                 (While (Not (Ig (Var "x") (Num 1)))
                        (Seq (Atrib (Var "y") (Mul (Var "y") (Var "x")))
                             (Atrib (Var "x") (Sub (Var "x") (Num 1))))))
+
+testaSwap :: CExp
+testaSwap = (Swap (Var "x") (Var "y"))
