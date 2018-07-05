@@ -20,9 +20,10 @@ data CExp = While BExp CExp
   | If BExp CExp CExp
   | Seq CExp CExp
   | Atrib AExp AExp
-  -- | Repeat CExp Until BExp
-  -- | Do CExp While BExp
-  -- | For normal (?)
+  | Repeat CExp BExp
+  | Do CExp BExp
+  | For AExp AExp AExp CExp
+  | DuplaAtribuição AExp AExp AExp AExp
   | Swap AExp AExp  -- troca valor dos 2
   | Skip
   deriving(Show)
@@ -73,19 +74,36 @@ cbigStep (Seq c1 c2,s) = let (com1, s1) = cbigStep(c1, s) in cbigStep(c2, s1)
 cbigStep (Atrib (Var x) e,s) = let (n1, s1) = abigStep(e, s) in (Skip, mudaVar s x n1)
 
 cbigStep (While b c, s) = case bbigStep(b, s) of
-                (True, _) -> let (loop, s') = (While b c, s) in (Seq c loop, s')
-                (False, s') -> (Skip, s')
+                (True, _) -> let (loop, s') = cbigStep(c, s) in cbigStep(Seq c (While b loop), s')
+                (False, _) -> (Skip, s)
+
+-- cbigStep (While b c, s) = let (b', s) = bbigStep(b, s) in
+--                                       (if b' then ((Seq (c) (While (b)(c))), s') else (Skip, )
 --swap(x,y)
 cbigStep (Swap (Var x) (Var y), s) = (Skip, mudaVar (mudaVar s x (procuraVar s y)) y (procuraVar s x))
 
---repart a until b
---do a while b
---for normal (?)
+-- --repeat a until b
+-- cbigStep (Repeat c b, s) = let (c', s') = cbigStep(c, s) in case bbigStep(b, s') of
+--                 (True, _) ->
+--                 (False, _) ->
+-- --do a while b
+-- cbigStep (Do c b, s) = let (c', s') = cbigStep(c, s) in case bbigStep(b, s') of
+--                 (True, _) ->
+--                 (False, _) ->
+--for  x e1 e2 c     for x from e1 to e2 do c, s
+-- if e1 <= e2 then x = e1; c ; for x from (e1+1) to e2 do c else Skip, s ==> <Skip, s'>
+-- cbigStep (For x e1 e2 c)
+
+--duplaAtribuição
+-- cbigStep( DuplaAtribuição (Var x) (Var y) e1 e2, s) = (Seq (Atrib x e1) (Atrib y e2) ,)
 
 
 
 meuEstado :: Estado
 meuEstado = [("x",3), ("y",0), ("z",0)]
+
+testewhile :: CExp
+testewhile = (While (Not (Ig (Var "x") (Num 1))) (Atrib (Var "x") (Sub (Var "x")(Num 1)))  )
 
 estadoTestaSwap :: Estado
 estadoTestaSwap = [("x",3), ("y",2), ("z",0)]
@@ -108,6 +126,10 @@ fatorial = (Seq (Atrib (Var "y") (Num 1))
                 (While (Not (Ig (Var "x") (Num 1)))
                        (Seq (Atrib (Var "y") (Mul (Var "y") (Var "x")))
                             (Atrib (Var "x") (Sub (Var "x") (Num 1))))))
-
+-- y = 1
+-- while x != 1
+--   y = y * x
+--   x = x - 1
+-- x = 1     y = 6
 testaSwap :: CExp
 testaSwap = (Swap (Var "x") (Var "y"))
