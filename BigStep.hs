@@ -77,12 +77,12 @@ cbigStep (Seq c1 c2,s) = let (com1, s1) = cbigStep(c1, s) in cbigStep(c2, s1)
 
 cbigStep (Atrib (Var x) e,s) = let (n1, s1) = abigStep(e, s) in (Skip, mudaVar s x n1)
 
-cbigStep (While b c, s) = case bbigStep(b, s) of
-                (True, _) -> let (loop, s') = cbigStep(c, s) in cbigStep(Seq (c) (While b c), s')
-                (False, _) -> (Skip, s)
-
 --swap(x,y)
 cbigStep (Swap (Var x) (Var y), s) = (Skip, mudaVar (mudaVar s x (procuraVar s y)) y (procuraVar s x))
+
+cbigStep (While b c, s) = case bbigStep(b, s) of
+                (True, _) -> cbigStep(Seq (c) (While b c), s)
+                (False, _) -> (Skip, s)
 
 -- repeat a until b
 cbigStep (Repeat c b, s) = let (c', s') = cbigStep(c, s) in case bbigStep(b, s') of
@@ -108,7 +108,7 @@ cbigStep( DuplaAtribuição (Var x) (Var y) e1 e2, s) = let (n1, s') = abigStep(
 
 
 meuEstado :: Estado
-meuEstado = [("x",4), ("y",0), ("z",0)]
+meuEstado = [("x",10), ("y",0), ("z",0)]
 
 -- testaLeq :: BExp
 -- testaLeq = (Leq (Var "x") (Var "y"))
