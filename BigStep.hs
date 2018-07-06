@@ -14,6 +14,7 @@ data BExp = TRUE
   | And BExp BExp
   | Or  BExp BExp
   | Ig  AExp AExp
+  | Leq AExp AExp
   deriving(Show)
 
 data CExp = While BExp CExp
@@ -24,7 +25,7 @@ data CExp = While BExp CExp
   | Do CExp BExp
   | For AExp AExp AExp CExp
   | DuplaAtribuição AExp AExp AExp AExp
-  | Swap AExp AExp  -- troca valor dos 2
+  | Swap AExp AExp
   | Skip
   deriving(Show)
 
@@ -62,51 +63,72 @@ bbigStep (And b1 b2,s ) = let(n1,s1) = bbigStep (b1, s)
 bbigStep (Or b1 b2,s ) = let(n1,s1) = bbigStep (b1, s)
                             (n2,s2) = bbigStep (b2, s)
                             in (n1 || n2, s)
+bbigStep (Leq e1 e2, s) = let(n1,s1) = abigStep (e1, s)
+                             (n2,s2) = abigStep (e2, s)
+                             in (n1 <= n2, s)
 
 cbigStep :: (CExp,Estado) -> (CExp,Estado)
 cbigStep (Skip,s)          = (Skip,s)
 cbigStep (If b c1 c2,s) = case bbigStep(b,s) of
-                (True, _) -> (c1, s)
-                (False, _) -> (c2, s)
+                (True, _) -> cbigStep(c1, s)
+                (False, _) -> cbigStep(c2, s)
 
 cbigStep (Seq c1 c2,s) = let (com1, s1) = cbigStep(c1, s) in cbigStep(c2, s1)
 
 cbigStep (Atrib (Var x) e,s) = let (n1, s1) = abigStep(e, s) in (Skip, mudaVar s x n1)
 
 cbigStep (While b c, s) = case bbigStep(b, s) of
-                (True, _) -> let (loop, s') = cbigStep(c, s) in cbigStep(Seq c (While b loop), s')
+                (True, _) -> let (loop, s') = cbigStep(c, s) in cbigStep(Seq (c) (While b c), s')
                 (False, _) -> (Skip, s)
 
--- cbigStep (While b c, s) = let (b', s) = bbigStep(b, s) in
---                                       (if b' then ((Seq (c) (While (b)(c))), s') else (Skip, )
 --swap(x,y)
 cbigStep (Swap (Var x) (Var y), s) = (Skip, mudaVar (mudaVar s x (procuraVar s y)) y (procuraVar s x))
 
--- --repeat a until b
--- cbigStep (Repeat c b, s) = let (c', s') = cbigStep(c, s) in case bbigStep(b, s') of
---                 (True, _) ->
---                 (False, _) ->
--- --do a while b
--- cbigStep (Do c b, s) = let (c', s') = cbigStep(c, s) in case bbigStep(b, s') of
---                 (True, _) ->
---                 (False, _) ->
+-- repeat a until b
+cbigStep (Repeat c b, s) = let (c', s') = cbigStep(c, s) in case bbigStep(b, s') of
+                (True, _) -> (Skip, s)
+                (False, _) -> cbigStep(Seq c (Repeat c' b), s')
+--do a while b
+cbigStep (Do c b, s) = let (c', s') = cbigStep(c, s) in case bbigStep(b, s') of
+                (True, _) -> cbigStep(Seq c (Repeat c' b), s')
+                (False, _) -> (Skip, s)
+
 --for  x e1 e2 c     for x from e1 to e2 do c, s
 -- if e1 <= e2 then x = e1; c ; for x from (e1+1) to e2 do c else Skip, s ==> <Skip, s'>
--- cbigStep (For x e1 e2 c)
+-- cbigStep (For (Var x) e1 e2 c, s) = case bbigStep(Leq (e1) (e2)) of
+--                                 (True, _) -> let (x, s) = cbigStep(A)
+--                                 (False, _) -> (Skip, s)
+
 
 --duplaAtribuição
--- cbigStep( DuplaAtribuição (Var x) (Var y) e1 e2, s) = (Seq (Atrib x e1) (Atrib y e2) ,)
+cbigStep( DuplaAtribuição (Var x) (Var y) e1 e2, s) = let (n1, s') = abigStep(e1, s) in
+                          cbigStep ( Atrib (Var y) (e2), (mudaVar s x n1))
 
 
 
 meuEstado :: Estado
-meuEstado = [("x",3), ("y",0), ("z",0)]
+meuEstado = [("x",4), ("y",0), ("z",0)]
+
+-- testaLeq :: BExp
+-- testaLeq = (Leq (Var "x") (Var "y"))
+-- testaLeq2 :: BExp
+-- testaLeq2 = (Leq (Var "y") (Var "z"))
+-- testaLeq3 :: CExp
+-- testaLeq3 = (Seq (Atrib (Var "y")(Num 4))
+--                  (If (Leq (Var "x") (Var "y")) (Atrib (Var "z")(Num 99)) (Skip) ))
 
 testewhile :: CExp
-testewhile = (While (Not (Ig (Var "x") (Num 1))) (Atrib (Var "x") (Sub (Var "x")(Num 1)))  )
+testewhile = (While (Not (Ig (Var "x") (Num 1)))
+                    (Atrib (Var "x") (Sub (Var "x")(Num 1)))  )
 
 estadoTestaSwap :: Estado
 estadoTestaSwap = [("x",3), ("y",2), ("z",0)]
+
+-- estadoTestaDA :: Estado
+-- estadoTestaDA = [("x",3), ("y",2), ("z",0)]
+--
+-- testeDA :: CExp
+-- testeDA = DuplaAtribuição (Var "x") (Var "y") (Num 15) (Num 25)
 
 exemplo :: AExp
 exemplo = Som (Num 3) (Som (Var "x") (Var "y"))
@@ -130,6 +152,6 @@ fatorial = (Seq (Atrib (Var "y") (Num 1))
 -- while x != 1
 --   y = y * x
 --   x = x - 1
--- x = 1     y = 6
+-- x = 1     y = 24
 testaSwap :: CExp
 testaSwap = (Swap (Var "x") (Var "y"))
