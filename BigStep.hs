@@ -86,18 +86,19 @@ cbigStep (Swap (Var x) (Var y), s) = (Skip, mudaVar (mudaVar s x (procuraVar s y
 
 -- repeat a until b
 cbigStep (Repeat c b, s) = let (c', s') = cbigStep(c, s) in case bbigStep(b, s') of
-                (True, _) -> (Skip, s)
+                (True, _) -> (Skip, s')
                 (False, _) -> cbigStep(Seq c (Repeat c' b), s')
 --do a while b
 cbigStep (Do c b, s) = let (c', s') = cbigStep(c, s) in case bbigStep(b, s') of
                 (True, _) -> cbigStep(Seq c (Repeat c' b), s')
-                (False, _) -> (Skip, s)
+                (False, _) -> (Skip, s')
 
 --for  x e1 e2 c     for x from e1 to e2 do c, s
 -- if e1 <= e2 then x = e1; c ; for x from (e1+1) to e2 do c else Skip, s ==> <Skip, s'>
--- cbigStep (For (Var x) e1 e2 c, s) = case bbigStep(Leq (e1) (e2)) of
---                                 (True, _) -> let (x, s) = cbigStep(A)
---                                 (False, _) -> (Skip, s)
+cbigStep (For (Var x) (e1) (e2) c, s) = case bbigStep(Leq (e1) (e2), s) of
+                                (True, _) ->
+                                    cbigStep(Seq (Atrib (Var x) e1) (Seq (c) (For (Var x) (Som e1 (Num 1)) e2 c) ), s)
+                                (False, _) -> (Skip, s)
 
 
 --duplaAtribuição
@@ -117,8 +118,8 @@ meuEstado = [("x",4), ("y",0), ("z",0)]
 -- testaLeq3 = (Seq (Atrib (Var "y")(Num 4))
 --                  (If (Leq (Var "x") (Var "y")) (Atrib (Var "z")(Num 99)) (Skip) ))
 
-testewhile :: CExp
-testewhile = (While (Not (Ig (Var "x") (Num 1)))
+testeWhile :: CExp
+testeWhile = (While (Not (Ig (Var "x") (Num 1)))
                     (Atrib (Var "x") (Sub (Var "x")(Num 1)))  )
 
 estadoTestaSwap :: Estado
@@ -153,5 +154,12 @@ fatorial = (Seq (Atrib (Var "y") (Num 1))
 --   y = y * x
 --   x = x - 1
 -- x = 1     y = 24
-testaSwap :: CExp
-testaSwap = (Swap (Var "x") (Var "y"))
+testeSwap :: CExp
+testeSwap = (Swap (Var "x") (Var "y"))
+
+estadoFor :: Estado
+estadoFor = [("x", 0), ("y", 0), ("z", 0)]
+
+testeFor :: CExp
+testeFor = (For (Var "x") (Num 1) (Num 5) (Seq (Atrib (Var "y") (Som (Var "y") (Num 1)) )
+                                               (Atrib (Var "z") (Som (Var "z") (Num 5)) ) ))
