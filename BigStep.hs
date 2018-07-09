@@ -87,10 +87,10 @@ cbigStep (While b c, s) = case bbigStep(b, s) of
 -- repeat a until b
 cbigStep (Repeat c b, s) = let (c', s') = cbigStep(c, s) in case bbigStep(b, s') of
                 (True, _) -> (Skip, s')
-                (False, _) -> cbigStep(Seq c (Repeat c' b), s')
+                (False, _) -> cbigStep((Repeat c b), s')
 --do a while b
 cbigStep (Do c b, s) = let (c', s') = cbigStep(c, s) in case bbigStep(b, s') of
-                (True, _) -> cbigStep(Seq c (Repeat c' b), s')
+                (True, _) -> cbigStep((Do c b), s')
                 (False, _) -> (Skip, s')
 
 --for  x e1 e2 c     for x from e1 to e2 do c, s
@@ -106,30 +106,17 @@ cbigStep( DuplaAtribuição (Var x) (Var y) e1 e2, s) = let (n1, s') = abigStep(
                           cbigStep ( Atrib (Var y) (e2), (mudaVar s x n1))
 
 
-
 meuEstado :: Estado
 meuEstado = [("x",10), ("y",0), ("z",0)]
-
--- testaLeq :: BExp
--- testaLeq = (Leq (Var "x") (Var "y"))
--- testaLeq2 :: BExp
--- testaLeq2 = (Leq (Var "y") (Var "z"))
--- testaLeq3 :: CExp
--- testaLeq3 = (Seq (Atrib (Var "y")(Num 4))
---                  (If (Leq (Var "x") (Var "y")) (Atrib (Var "z")(Num 99)) (Skip) ))
-
-testeWhile :: CExp
-testeWhile = (While (Not (Ig (Var "x") (Num 1)))
-                    (Atrib (Var "x") (Sub (Var "x")(Num 1)))  )
 
 estadoTestaSwap :: Estado
 estadoTestaSwap = [("x",3), ("y",2), ("z",0)]
 
--- estadoTestaDA :: Estado
--- estadoTestaDA = [("x",3), ("y",2), ("z",0)]
---
--- testeDA :: CExp
--- testeDA = DuplaAtribuição (Var "x") (Var "y") (Num 15) (Num 25)
+estadoFor :: Estado
+estadoFor = [("x", 0), ("y", 0), ("z", 0)]
+
+estadoTestaDA :: Estado
+estadoTestaDA = [("x",3), ("y",2), ("z",0)]
 
 exemplo :: AExp
 exemplo = Som (Num 3) (Som (Var "x") (Var "y"))
@@ -149,17 +136,33 @@ fatorial = (Seq (Atrib (Var "y") (Num 1))
                 (While (Not (Ig (Var "x") (Num 1)))
                        (Seq (Atrib (Var "y") (Mul (Var "y") (Var "x")))
                             (Atrib (Var "x") (Sub (Var "x") (Num 1))))))
--- y = 1
--- while x != 1
---   y = y * x
---   x = x - 1
--- x = 1     y = 24
-testeSwap :: CExp
-testeSwap = (Swap (Var "x") (Var "y"))
 
-estadoFor :: Estado
-estadoFor = [("x", 0), ("y", 0), ("z", 0)]
+-- testaLeq :: BExp
+-- testaLeq = (Leq (Var "x") (Var "y"))
+-- testaLeq2 :: BExp
+-- testaLeq2 = (Leq (Var "y") (Var "z"))
+-- testaLeq3 :: CExp
+-- testaLeq3 = (Seq (Atrib (Var "y")(Num 4))
+--                  (If (Leq (Var "x") (Var "y")) (Atrib (Var "z")(Num 99)) (Skip) ))
+
+testeWhile :: CExp
+testeWhile = (While (Not (Ig (Var "x") (Num 1)))
+                    (Atrib (Var "x") (Sub (Var "x")(Num 1)))  )
+
+testeRepeat :: CExp
+testeRepeat = (Repeat (Atrib (Var "z")(Som (Var "z")(Num 10)))
+                      ((Ig (Var "z") (Num 100) ) ))
+
+testeDo :: CExp
+testeDo = (Do (Atrib (Var "z")(Som (Var "z")(Num 10)))
+              (Not(Ig (Var "z") (Num 100) ) ))
 
 testeFor :: CExp
 testeFor = (For (Var "x") (Num 1) (Num 5) (Seq (Atrib (Var "y") (Som (Var "y") (Num 1)) )
                                                (Atrib (Var "z") (Som (Var "z") (Num 5)) ) ))
+
+testeSwap :: CExp
+testeSwap = (Swap (Var "x") (Var "y"))
+
+testeDA :: CExp
+testeDA = DuplaAtribuição (Var "x") (Var "y") (Num 15) (Num 25)
